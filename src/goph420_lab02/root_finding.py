@@ -25,17 +25,20 @@ def root_newton_raphson(x0, f, dfdx):
 	1D vector of approximate relative error at each iteration
 	"""
 	# initialize loop variables
-	tol = 1e-16 # approximate relative error toleranc
-	maxit = 100 # max iterations
-	esp_a = 2 * tol
+	tol = 1e-8 # approximate relative error tolerance
+	maxit = 200 # max iterations
+	eps_a = 2 * tol
+	error = np.array([])
 	itr = 1
 
-	while eps_a > tol & itr < maxit:
+	while eps_a > tol and itr < maxit:
 		x1  = x0 - f(x0) / dfdx(x0) # Newton Raphson formula
 		eps_a = np.abs((x1 - x0) / x1) # calculate approx. relative error
+		error = np.append(error, eps_a)
 		x0 = x1 # update guess
+		itr += 1
 		if itr >= maxit:
-			raise RuntimeWarning(f"The Newton-Raphson Root Finding Algorithm did not converge over {itr} iterations.")
+			raise RuntimeWarning(f"The Newton-Raphson Root Finding Algorithm did not converge over {itr} iterations.\nThe current value of x0: {x0}")
 		
-
+	return x0, itr, error
 
