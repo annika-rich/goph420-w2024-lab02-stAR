@@ -26,7 +26,7 @@ def root_newton_raphson(x0, f, dfdx):
 	"""
 	# initialize loop variables
 	tol = 1e-8 # approximate relative error tolerance
-	maxit = 200 # max iterations
+	maxit = 250 # max iterations
 	eps_a = 2 * tol
 	error = np.array([])
 	itr = 1

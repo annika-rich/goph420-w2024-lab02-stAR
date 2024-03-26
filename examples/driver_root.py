@@ -11,11 +11,11 @@ def main():
     rho_2 = 2500 # kg / m ** 3
     B1 = 1900 # m / s
     B2 = 3200 # m / s
-    H = 4.0 # km
+    H = 4000 # m
     const = H ** 2 * ((B1 ** -2) - (B2 ** -2))
     # calculate the max possible value of zeta (for a real number result)
     zeta_max = np.sqrt(const)
-    print(f"zeta max: {zeta_max}")
+
     # define list of possible love wave frequencies to plot
     freq = np.array([0.01, 0.1, 0.5, 1, 5, 10]) # Hz
      # root finding equation g(zeta) = 0
@@ -32,21 +32,31 @@ def main():
           + (rho_2 / rho_1) * 1 / (np.cos(const - zeta ** 2)))
         return dx
 
-    modes = np.array([0, 1, 2])
-    # initiliaze empty 2D array to store root at indices that indicate both the mode and frequency
+    modes = [0, 1, 2]
+    # initiliaze empty 2D array to store root, velocity and wavelength at indices that indicate both the mode and frequency
     zeta = np.zeros([len(freq),len(modes)])
+    c = np.zeros([len(freq), len(modes)])
+    wvl = np.zeros([len(freq), len(modes)])
 
     for i, f in enumerate(freq):
-        for m in modes:
-            # initial guess calculated using locations of asymptotes of tan(2 * pi * f * zeta)
-            # initial guess is below asymptote (below inflection point since using Newon_Raphson)
-            x0 = (2 * m + 1) / (4 * f) - 1e-4
+        # initialize loop execution
+        m = 0
+        # initial guess calculated using locations of asymptotes of tan(2 * pi * f * zeta)
+        # initial guess is below asymptote (below inflection point since using Newon_Raphson)
+        x0 = (2 * m + 1) / (4 * f) - 1e-4
+        while x0 < zeta_max:
+            print(x0)
             func = lambda zeta: fx(f, zeta)
             deriv = lambda zeta: dx(f, zeta)
             root, itr, error = root_newton_raphson(x0, func, deriv)
+            print(root)
             zeta[i, m] = root
-            
-
+            c[i, m] = np.sqrt(B1 - (H / zeta[i, m]))
+            wvl[i, m] = c[i, m] / f
+            m += 1
+            x0 = (2 * m + 1) / (4 * f) - 1e-4
+        
+    # make plots...
 
 if __name__ == "__main__":
     main()
