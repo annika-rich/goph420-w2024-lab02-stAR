@@ -27,9 +27,9 @@ def main():
         
     # derivative of root finding equation f
     def dx(f, zeta):
-        dx = ((2 * np.pi * f) / np.cos(2 * np.pi * zeta)
+        dx = -((2 * np.pi * f) / np.cos(2 * f * np.pi * zeta) ** 2
           + (rho_2 / rho_1) * np.sqrt(const - zeta ** 2) / zeta ** 2 
-          + (rho_2 / rho_1) * 1 / (np.cos(const - zeta ** 2)))
+          + (rho_2 / rho_1) / (np.sqrt(const - zeta ** 2)))
         return dx
 
     modes = [0, 1, 2]
@@ -37,24 +37,60 @@ def main():
     zeta = np.zeros([len(freq),len(modes)])
     c = np.zeros([len(freq), len(modes)])
     wvl = np.zeros([len(freq), len(modes)])
+    m_max = []
 
     for i, f in enumerate(freq):
+        plt.figure()
+        plt.plot([0, zeta_max], [0, 0], '--b')
+        z0 = 1e-4
         # initialize loop execution
         m = 0
         # initial guess calculated using locations of asymptotes of tan(2 * pi * f * zeta)
         # initial guess is below asymptote (below inflection point since using Newon_Raphson)
+        func = lambda zeta: fx(f, zeta)
+        deriv = lambda zeta: dx(f, zeta)
         x0 = (2 * m + 1) / (4 * f) - 1e-4
         while x0 < zeta_max:
-            print(x0)
-            func = lambda zeta: fx(f, zeta)
-            deriv = lambda zeta: dx(f, zeta)
+            z1 = x0
+            zp = np.linspace(z0, z1)
+            #print(x0)
+            plt.plot(zp, func(zp), '-k')
+            plt.plot([z1 + 1e-4, z1 + 1e-4], [-100, 100], '--r')
+            plt.plot(x0, 0.0, 'og')
             root, itr, error = root_newton_raphson(x0, func, deriv)
-            print(root)
-            zeta[i, m] = root
-            c[i, m] = np.sqrt(B1 - (H / zeta[i, m]))
-            wvl[i, m] = c[i, m] / f
+            plt.plot(root, func(root), 'ro')
+            #print(root)
+            if m < 3:
+                zeta[i, m] = root
+                c[i, m] = 1 / np.sqrt(B1 ** -2 - (zeta[i, m] / H ** 2))
+                wvl[i, m] = c[i, m] / f
             m += 1
+            # initialize new guess for next mode
             x0 = (2 * m + 1) / (4 * f) - 1e-4
+            z0 = z1 + 2e-4
+        
+        if not m and func(x0:= zeta_max - 1e-4) < 0:
+            root, itr, error = root_newton_raphson(x0, func, deriv)
+            zeta[i, m] = root
+            c[i, m] = 1 / np.sqrt(B1 ** -2 - (zeta[i, m] / H ** 2))
+            wvl[i, m] = c[i, m] / f
+            plt.plot(root, func(root), 'ro')
+            m_max.append(m+1)
+        else:
+            m_max.append(m)
+
+        z1 = zeta_max - 1e-4
+        zp = np.linspace(z0, z1)
+        plt.plot(zp, func(zp), '-k')
+        plt.xlabel('zeta')
+        plt.ylabel('f(zeta)')
+        plt.ylim((-10, 10))
+        plt.title(f"f = {f} Hz")
+        plt.savefig(f'figures/frequency_{f}.png')
+
+    print(c)
+    print(wvl)
+    print(np.argwhere(c[:,1] > 0).flatten())
         
     # make plots...
 
